@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Wound Analysis Result - AI First Aid Assistant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #e74c3c, #f39c12, #27ae60, #3498db);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 3rem;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #3498db;
+            transition: transform 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .result-card.urgent {
+            border-left-color: #e74c3c;
+            background: linear-gradient(135deg, #fff5f5, #ffffff);
+        }
+
+        .result-card.safe {
+            border-left-color: #27ae60;
+            background: linear-gradient(135deg, #f0fff4, #ffffff);
+        }
+
+        .result-card.warning {
+            border-left-color: #f39c12;
+            background: linear-gradient(135deg, #fffbf0, #ffffff);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .card-icon.detection {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .card-icon.confidence {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        .card-icon.urgent {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .card-icon.safe {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+
+        .card-icon.care {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0.5rem 0;
+        }
+
+        .card-description {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #f39c12, #27ae60);
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+
+        .advice-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .advice-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .advice-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .advice-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .advice-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #495057;
+        }
+
+        .image-section {
+            margin: 3rem 0;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .image-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .image-preview:hover {
+            transform: scale(1.02);
+        }
+
+        .disclaimer {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            color: #856404;
+        }
+
+        .disclaimer-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-urgent {
+            background: #fee;
+            color: #c53030;
+            border: 1px solid #fed7d7;
+        }
+
+        .status-safe {
+            background: #f0fff4;
+            color: #22543d;
+            border: 1px solid #c6f6d5;
+        }
+
+        .status-moderate {
+            background: #fffbf0;
+            color: #744210;
+            border: 1px solid #faf089;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 0.5rem;
+            }
+
+            .content {
+                padding: 2rem 1.5rem;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Analysis Complete</h1>
+            <p>Your wound has been analyzed using advanced AI technology</p>
+        </div>
+
+        <div class="content">
+            <div class="results-grid">
+                <!-- Detection Result -->
+                <div class="result-card">
+                    <div class="card-header">
+                        <div class="card-icon detection">🎯</div>
+                        <div class="card-title">Detection Result</div>
+                    </div>
+                    <div class="card-value">{{ result.predicted_class }}</div>
+                    <div class="card-description">AI-identified wound classification based on visual analysis</div>
+                </div>
+
+                <!-- Confidence Level -->
+                <div class="result-card">
+                    <div class="card-header">
+                        <div class="card-icon confidence">📊</div>
+                        <div class="card-title">Confidence Level</div>
+                    </div>
+                    <div class="card-value">{{ result.confidence | round(2) }}%</div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: '{{ result.confidence }}%'"></div>
+                    </div>
+                    <div class="card-description">Accuracy level of the AI analysis</div>
+                </div>
+
+                <!-- Urgency Assessment -->
+                <div class="result-card {% if result.urgent %}urgent{% else %}safe{% endif %}">
+                    <div class="card-header">
+                        <div class="card-icon {% if result.urgent %}urgent{% else %}safe{% endif %}">
+                            {% if result.urgent %}⚠️{% else %}✅{% endif %}
+                        </div>
+                        <div class="card-title">Urgency Level</div>
+                    </div>
+                    <div class="card-value">
+                        <span class="status-badge {% if result.urgent %}status-urgent{% else %}status-safe{% endif %}">
+                            {% if result.urgent %}
+                                🚨 Urgent Care Needed
+                            {% else %}
+                                ✅ Non-Urgent
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="card-description">
+                        {% if result.urgent %}
+                            Immediate medical attention recommended
+                        {% else %}
+                            Can be managed with proper home care
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Home Care Suitability -->
+                <div class="result-card {% if result.home_care %}safe{% else %}warning{% endif %}">
+                    <div class="card-header">
+                        <div class="card-icon care">🏠</div>
+                        <div class="card-title">Home Care</div>
+                    </div>
+                    <div class="card-value">
+                        <span class="status-badge {% if result.home_care %}status-safe{% else %}status-moderate{% endif %}">
+                            {% if result.home_care %}
+                                ✅ Suitable for Home Care
+                            {% else %}
+                                ❌ Professional Care Needed
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="card-description">
+                        {% if result.home_care %}
+                            Can be treated at home with proper care
+                        {% else %}
+                            Requires professional medical treatment
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical Advice Section -->
+            <div class="advice-section">
+                <div class="advice-header">
+                    <div class="advice-icon">💡</div>
+                    <div class="advice-title">Medical Recommendations</div>
+                </div>
+                <div class="advice-text">{{ result.advice }}</div>
+            </div>
+
+            <!-- Uploaded Image Section -->
+            <div class="image-section">
+                <h2 class="section-title">📷 Analyzed Image</h2>
+                <div class="image-container">
+                    <img src="{{ image_url }}" alt="Uploaded wound image" class="image-preview">
+                </div>
+            </div>
+
+            <!-- Medical Disclaimer -->
+            <div class="disclaimer">
+                <div class="disclaimer-header">
+                    ⚠️ Important Medical Disclaimer
+                </div>
+                <p>This AI analysis is for informational purposes only and should not replace professional medical advice, diagnosis, or treatment. Always consult with qualified healthcare professionals for serious injuries or if you have concerns about your health.</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions">
+                <a href="/" class="btn btn-primary">
+                    🏠 Analyze Another Image
+                </a>
+                <a href="#" onclick="window.print()" class="btn btn-secondary">
+                    🖨️ Print Results
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Animate confidence bar on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const confidenceFill = document.querySelector('.confidence-fill');
+            if (confidenceFill) {
+                setTimeout(() => {
+                    confidenceFill.style.width = confidenceFill.style.width;
+                }, 500);
+            }
+        });
+
+        // Add smooth scroll for any internal links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
